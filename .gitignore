@@ -1,0 +1,13 @@
+Library
+Temp
+*.csproj
+*.unityproj
+.DS_Store
+*.DS_Store
+Assets/VSCode/Plugins/Editor/.svn
+obj
+proj.ios
+proj.ios*
+*.sln
+*.userprefs
+.vscode/launch.json
