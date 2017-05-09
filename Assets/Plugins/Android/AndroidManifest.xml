@@ -13,7 +13,7 @@
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />  
             </intent-filter>
         </receiver>
-        <service android:name ="com.youme.voiceengine.VoiceEngineService"> 
+        <service android:name="com.youme.voiceengine.VoiceEngineService"> 
             <intent-filter> 
                 <action android:name="com.youme.voiceengine.VoiceEngineService"/> 
                 <category android:name="android.intent.category.default"/> 
