@@ -46,6 +46,10 @@ public class TalkTest : MonoBehaviour {
         talk.JoinChannel(new TalkChannel(channelID), (ChannelEvent evt) => { 
             if(evt.code == StatusCode.Success)
             {
+                talk.OpenMicrophone();
+                microphoneText.text = "麦克风：开";
+                talk.OpenSpeaker();
+                speakerText.text = "扬声器：开";
                 Log2UI("进入语音频道成功");
             }else{
                 UpdateLeavedChannelUI();
