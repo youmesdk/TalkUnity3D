@@ -49,7 +49,7 @@ namespace YouMe
         /// <param name="secretKey">游密官方分配的接入密钥，和appkey配对使用，在www.youme.im注册后可以自助获取</param>
         /// <param name="config">SDK配置对象，可以通过该对象的参数设置SDK的可选参数，比如服务器区域、日志级别、方言识别</param>
         /// <returns>IMClient对象</returns>
-        public IMClient Initialize(string appKey, string secretKey, Config config)
+        public IMClient Initialize(string appKey, string secretKey, IMConfig config)
         {
             if (config != null)
             {
@@ -118,9 +118,9 @@ namespace YouMe
             disconnectCallback = callback;
         }
 
-        public IMChannel[] GetCurrentChannels()
+        public Channel[] GetCurrentChannels()
         {
-            return new IMChannel[]{};
+            return new Channel[]{};
         }
 
         public ConnectStatus GetCurrentStatus()
@@ -133,7 +133,7 @@ namespace YouMe
             return IMManager.LastLoginUser;
         }
 
-        public void JoinChannel(IMChannel channel,Action<ChannelEvent> callback)
+        public void JoinChannel(Channel channel,Action<ChannelEvent> callback)
         {
             joinChannelCallback = callback;
             var code = IMAPI.Instance().JoinChatRoom( channel.ChannelID );
@@ -142,7 +142,7 @@ namespace YouMe
             }
         }
 
-        public void JoinMultiChannel(IMChannel[] channels,Action<ChannelEvent> callback)
+        public void JoinMultiChannel(Channel[] channels,Action<ChannelEvent> callback)
         {
             joinChannelCallback = callback;
             for (int i = 0; i < channels.Length;i++){
@@ -159,7 +159,7 @@ namespace YouMe
             throw new NotImplementedException();
         }
 
-        public void LeaveChannel(IMChannel channel,Action<ChannelEvent> callback)
+        public void LeaveChannel(Channel channel,Action<ChannelEvent> callback)
         {
             leaveChannelCallback = callback;
             var code = IMAPI.Instance().LeaveChatRoom( channel.ChannelID );
@@ -189,7 +189,7 @@ namespace YouMe
             return this;
         }
 
-        public void SwitchToChannels(IMChannel[] channel,Action<ChannelEvent> leaveCallback,Action<ChannelEvent> joinCallback)
+        public void SwitchToChannels(Channel[] channel,Action<ChannelEvent> leaveCallback,Action<ChannelEvent> joinCallback)
         {
             LeaveAllChannel(leaveCallback);
             JoinMultiChannel(channel,joinCallback);

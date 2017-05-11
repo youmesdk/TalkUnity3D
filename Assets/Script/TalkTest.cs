@@ -43,7 +43,7 @@ public class TalkTest : MonoBehaviour {
         Log2UI("开始进入语音频道");
 
         talk.SetUserID(userIDInput.text);
-        talk.JoinChannel(new TalkChannel(channelID), (ChannelEvent evt) => { 
+        talk.JoinChannel(new Channel(channelID), (ChannelEvent evt) => { 
             if(evt.code == StatusCode.Success)
             {
                 talk.OpenMicrophone();

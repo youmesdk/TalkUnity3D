@@ -19,7 +19,7 @@ public class IMTest : MonoBehaviour {
     void Start () {
     
         IM = IMClient.Instance;
-        IM.Initialize("YOUME670584CA1F7BEF370EC7780417B89BFCC4ECBF78", "yYG7XY8BOVzPQed9T1/jlnWMhxKFmKZvWSFLxhBNe0nR4lbm5OUk3pTAevmxcBn1mXV9Z+gZ3B0Mv/MxZ4QIeDS4sDRRPzC+5OyjuUcSZdP8dLlnRV7bUUm29E2CrOUaALm9xQgK54biquqPuA0ZTszxHuEKI4nkyMtV9sNCNDMBAAE=",new Config(){ServerZone=ServerZone.China});
+        IM.Initialize("YOUME670584CA1F7BEF370EC7780417B89BFCC4ECBF78", "yYG7XY8BOVzPQed9T1/jlnWMhxKFmKZvWSFLxhBNe0nR4lbm5OUk3pTAevmxcBn1mXV9Z+gZ3B0Mv/MxZ4QIeDS4sDRRPzC+5OyjuUcSZdP8dLlnRV7bUUm29E2CrOUaALm9xQgK54biquqPuA0ZTszxHuEKI4nkyMtV9sNCNDMBAAE=",new IMConfig(){ServerZone=ServerZone.China});
     
         userIDInput.text = Random.Range(10000,999999).ToString();
     }
@@ -43,7 +43,7 @@ public class IMTest : MonoBehaviour {
             if(evt.Code == StatusCode.Success){
                 userIDInput.interactable = false; loginButton.interactable = false; logoutButton.interactable = true;
                 //进入聊天频道
-                IM.JoinChannel(new IMChannel("5678"),(channelEvt)=>{
+                IM.JoinChannel(new Channel("5678"),(channelEvt)=>{
                     if(channelEvt.code == StatusCode.Success){
                         Log2UI("进入频道:5678 成功");
                     }else{

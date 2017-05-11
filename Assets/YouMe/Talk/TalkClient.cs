@@ -68,7 +68,7 @@ namespace YouMe
             return _userID;
         }
 
-        public void JoinChannel(TalkChannel channel,Action<ChannelEvent> callback,YouMeUserRole role = YouMeUserRole.YOUME_USER_TALKER_FREE)
+        public void JoinChannel(Channel channel,Action<ChannelEvent> callback,YouMeUserRole role = YouMeUserRole.YOUME_USER_TALKER_FREE)
         {
             if(string.IsNullOrEmpty(GetUserID())){
                 Log.e("Need SetUserID(string userid).");
@@ -91,7 +91,7 @@ namespace YouMe
             }
         }
 
-        public void LeaveChannel(TalkChannel channel,Action<ChannelEvent> callback){
+        public void LeaveChannel(Channel channel,Action<ChannelEvent> callback){
             if(channel.ChannelID==null){
                 Log.e("channel ID can't be null.");
                 return;

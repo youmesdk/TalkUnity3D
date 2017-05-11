@@ -1,7 +1,7 @@
 
 namespace YouMe{
     
-    public class IMChannel : IChannel
+    public class Channel : IChannel
     {
         string channelID;
 
@@ -11,7 +11,7 @@ namespace YouMe{
             }
         }
 
-        public IMChannel(string channelID){
+        public Channel(string channelID){
             this.channelID = channelID;
         }
     }
