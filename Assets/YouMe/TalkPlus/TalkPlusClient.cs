@@ -53,32 +53,32 @@ namespace YouMe
             return _userID;
         }
 
-        public void JoinChannel(Channel channel, bool withIMChannel, Action<ChannelEvent> joinTalkChannelCallback, Action<ChannelEvent> joinIMChannelCallback, YouMeUserRole role = YouMeUserRole.YOUME_USER_TALKER_FREE)
-        {
-            talk.JoinChannel(channel, joinTalkChannelCallback, role);
-            if (withIMChannel)
-            {
-                im.JoinChannel(channel, joinIMChannelCallback);
-            }
-        }
+        // public void JoinChannel(Channel channel, bool withIMChannel, Action<ChannelEvent> joinTalkChannelCallback, Action<ChannelEvent> joinIMChannelCallback, YouMeUserRole role = YouMeUserRole.YOUME_USER_TALKER_FREE)
+        // {
+        //     talk.JoinChannel(channel, joinTalkChannelCallback, role);
+        //     if (withIMChannel)
+        //     {
+        //         im.JoinChannel(channel, joinIMChannelCallback);
+        //     }
+        // }
 
-        public void LeaveChannel(Channel channel, bool withIMChannel, Action<ChannelEvent> leaveTalkChannelCallback, Action<ChannelEvent> leaveIMChannelCallback)
-        {
-            talk.LeaveChannel(channel, leaveTalkChannelCallback);
-            if( withIMChannel )
-            {
-                im.LeaveChannel(channel, leaveIMChannelCallback);
-            }
-        }
+        // public void LeaveChannel(Channel channel, bool withIMChannel, Action<ChannelEvent> leaveTalkChannelCallback, Action<ChannelEvent> leaveIMChannelCallback)
+        // {
+        //     talk.LeaveChannel(channel, leaveTalkChannelCallback);
+        //     if( withIMChannel )
+        //     {
+        //         im.LeaveChannel(channel, leaveIMChannelCallback);
+        //     }
+        // }
 
-        public void LeaveAllChannel(bool withIMChannel, Action<ChannelEvent> leaveTalkChannelCallback, Action<ChannelEvent> leaveIMChannelCallback)
-        {
-            talk.LeaveAllChannel(leaveTalkChannelCallback);
-            if (withIMChannel)
-            {
-                im.LeaveAllChannel(leaveIMChannelCallback);
-            }
-        }
+        // public void LeaveAllChannel(bool withIMChannel, Action<ChannelEvent> leaveTalkChannelCallback, Action<ChannelEvent> leaveIMChannelCallback)
+        // {
+        //     talk.LeaveAllChannel(leaveTalkChannelCallback);
+        //     if (withIMChannel)
+        //     {
+        //         im.LeaveAllChannel(leaveIMChannelCallback);
+        //     }
+        // }
 
         public void Logout(Action<LogoutEvent> callback)
         {
