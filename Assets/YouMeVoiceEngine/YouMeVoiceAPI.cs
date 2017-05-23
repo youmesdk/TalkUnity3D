@@ -34,7 +34,14 @@ namespace YouMe{
         #else
             [DllImport("youme_voice_engine")]
         #endif
-		private static extern void youme_setcallback(string strObjName);
+		private static extern System.IntPtr youme_getCbMessage ();
+
+		#if UNITY_IOS
+		[DllImport("__Internal")]
+		#else
+		[DllImport("youme_voice_engine")]
+		#endif
+		private static extern void youme_freeCbMessage (System.IntPtr pMsg);
 
         #if UNITY_IOS
             [DllImport("__Internal")]
@@ -63,6 +70,13 @@ namespace YouMe{
             [DllImport("youme_voice_engine")]
         #endif
 		private static extern void youme_setMicrophoneMute (bool mute);
+
+		#if UNITY_IOS
+		[DllImport("__Internal")]
+		#else
+		[DllImport("youme_voice_engine")]
+		#endif
+		private static extern void youme_setAutoSendStatus (bool bAutoSend);
 
         #if UNITY_IOS
             [DllImport("__Internal")]
@@ -188,6 +202,13 @@ namespace YouMe{
         #else
             [DllImport("youme_voice_engine")]
         #endif
+    	private static extern int youme_setMicLevelCallback(int maxLevel);
+
+        #if UNITY_IOS
+            [DllImport("__Internal")]
+        #else
+            [DllImport("youme_voice_engine")]
+        #endif
         private static extern int youme_pauseChannel();
         
         #if UNITY_IOS
@@ -217,46 +238,127 @@ namespace YouMe{
             [DllImport("youme_voice_engine")]
         #endif
         private static extern int youme_getSDKVersion();
+
+		#if UNITY_IOS
+		[DllImport("__Internal")]
+		#else
+		[DllImport("youme_voice_engine")]
+		#endif
+		private static extern int  youme_requestRestApi( string strCommand , string  strQueryBody, ref int  requestID );
+
+		#if UNITY_IOS
+		[DllImport("__Internal")]
+		#else
+		[DllImport("youme_voice_engine")]
+		#endif
+		private static extern int  youme_getChannelUserList( string strChannelID , int maxCount ,  bool  notifyMemChange );
+
+
+		#if UNITY_IOS
+		[DllImport("__Internal")]
+		#else
+		[DllImport("youme_voice_engine")]
+		#endif
+		private static extern int  youme_setToken( string strToken );
+
         
-        
-       
+    
 	    //////////////////////////////////////////////////////////////////////////////////////////////
 		// 导出SDK所有的C接口API -- end
 	    //////////////////////////////////////////////////////////////////////////////////////////////
         
-
-		//针对windows的回调设置
-		#if UNITY_WINRT || UNITY_STANDALONE_WIN
- 
-		public delegate void UnitySendMessageDelegate([MarshalAs(UnmanagedType.LPStr)]string gameObjectName, [MarshalAs(UnmanagedType.LPStr)]string methodName, [MarshalAs(UnmanagedType.LPStr)]string message);
-		
-		private static UnitySendMessageDelegate s_SendMessageDelegate;
-		
-        #if UNITY_IOS
-            [DllImport("__Internal")]
-        #else
-            [DllImport("youme_voice_engine")]
-        #endif
-		private static extern void SetUnitySendMessageCallback(UnitySendMessageDelegate sendMessage);
-		
-		#if UNITY_IOS
-        	[MonoPInvokeCallback(typeof(UnitySendMessageDelegate))]
-		#endif
-		private static void UnitySendMessageWrapper(string gameObjectName, string methodName, string message)
+		//
+		// 回调消息类型定义， 需要跟底层匹配
+		//
+		private enum CallbackType
 		{
-			callback.Add (()=>{
-				var gameObject = GameObject.Find(gameObjectName);
+			CALLBACK_TYPE_EVENT = 0,
+			CALLBACK_TYPE_REST_API_RESPONSE, 
+			CALLBACK_TYPE_MEMBER_CHANGE
+		}
+
+		//
+		// 回调处理
+		// 主动调用底层函数查询当前是否有回调消息，如果有的话，做Json解析并传给上层
+		//
+		private class YoumeCallbackObject : MonoBehaviour {
+
+			void Start() {
+				InvokeRepeating("YoumeCallback", 0.5f, 0.05f);
+			}
+
+			void YoumeCallback ()
+			{				
+				System.IntPtr pMsg = YouMeVoiceAPI.youme_getCbMessage();
+				if (pMsg == System.IntPtr.Zero) {
+					return;
+				}
+				string strMessage = Marshal.PtrToStringAuto(pMsg);
+				//Debug.Log("recv message:" + strMessage);
+				if(null != strMessage)
+				{
+					try {
+						YouMeVoiceAPI.GetInstance().ParseJsonCallbackMessage(strMessage);
+					} catch (System.Exception e) {
+						Debug.LogError(e.StackTrace);
+					}
+				}
+
+				YouMeVoiceAPI.youme_freeCbMessage(pMsg);
+				pMsg = System.IntPtr.Zero;
+			}
+
+		}
+
+		//
+		// 解析回调消息的Json字符串
+		//
+		private void ParseJsonCallbackMessage(string strMessage)
+		{
+			string strMethodName = null;
+			string strCbMessage = null;
+
+			JsonData jsonMessage =  JsonMapper.ToObject (strMessage);
+			YouMeVoiceAPI.CallbackType cbType = (YouMeVoiceAPI.CallbackType)(int)jsonMessage ["type"];
+			//Debug.Log ("###### callback message type:" + msgType);
+			switch (cbType) {
+			case YouMeVoiceAPI.CallbackType.CALLBACK_TYPE_EVENT:
+				{
+					strMethodName = "OnEvent";
+					int eventType = (int)jsonMessage ["event"];
+					int errCode = (int)jsonMessage ["error"];
+					string channelId = (string)jsonMessage ["channelid"];
+					string param = (string)jsonMessage ["param"];
+					strCbMessage = "" + eventType + "," + errCode + "," + channelId + "," + param;
+					//Debug.Log ("eventType:" + eventType + ",errCode:" + errCode + ", channelId:" + channelId + ",param:" + param );
+				}
+				break;
+			case YouMeVoiceAPI.CallbackType.CALLBACK_TYPE_REST_API_RESPONSE:
+				{
+					strMethodName = "OnRequestRestApi";
+					strCbMessage = strMessage;
+				}
+				break;
+			case YouMeVoiceAPI.CallbackType.CALLBACK_TYPE_MEMBER_CHANGE:
+				{
+					strMethodName = "OnMemberChange";
+					strCbMessage = strMessage;
+				}
+				break;
+			}
+
+			if ((mCallbackObjName != null) && (strMethodName != null) && (strCbMessage != null)) {
+				var gameObject = GameObject.Find(mCallbackObjName);
 				if (gameObject != null)
 				{
-					gameObject.SendMessage(methodName, message);
+					gameObject.SendMessage(strMethodName, strCbMessage);
 				}
-			});
+			}
 		}
-		
-		#endif //UNITY_WINRT || UNITY_STANDALONE_WIN
 
 		//成员变量定义
 		private static YouMeVoiceAPI mInstance;
+		private string mCallbackObjName = null;
  		#if UNITY_ANDROID
 		private  bool mAndroidInited = false;
 		private  bool mAndroidInitOK = false;
@@ -269,28 +371,10 @@ namespace YouMe{
 			if (mInstance == null)
 			{
 				mInstance = new YouMeVoiceAPI();
-
-				var youmeObj = new GameObject ("__YouMeRTCSDkGameObject__");
-				GameObject.DontDestroyOnLoad (youmeObj);
-				youmeObj.hideFlags = HideFlags.DontSave;
-				youmeObj.AddComponent<YoumeTalkObj> ();
-
 			}
 			return mInstance;
 		}
 
-		private static List<System.Action> callback=new List<System.Action>();
-		private class YoumeTalkObj:MonoBehaviour{
-			void Update(){
-				if (callback.Count > 0) {
-					try {
-						callback [0] ();
-					} catch (System.Exception) {
-					}
-					callback.RemoveAt (0);
-				}
-			}
-		}
 		YouMeVoiceAPI()
 		{
 			#if UNITY_ANDROID
@@ -340,27 +424,7 @@ namespace YouMe{
 				}
 			#endif 
 
-			#if (UNITY_STANDALONE_WIN)
-				s_SendMessageDelegate = UnitySendMessageWrapper;
-				SetUnitySendMessageCallback(s_SendMessageDelegate);
-			#endif
-			
-			#if (UNITY_IOS || UNITY_STANDALONE_WIN)
-				youme_setcallback (strObjName);
-			#elif UNITY_ANDROID
-				// Android下回调的方式不一样，需要通过JNI转换对象（如string转为jsting），直接使用 C 的回调方式会导致垃圾回收时崩溃。
-				if(null != instance_youme_java)
-				{
-					try
-					{
-						instance_youme_java.CallStatic("SetCallback",strObjName);
-					}
-					catch
-					{
-						Debug.Log("SetCallback exception!!!");
-					}
-				}
-			#endif
+			mCallbackObjName = strObjName;
 		}
 
         /// <summary>
@@ -394,26 +458,12 @@ namespace YouMe{
 				}
 			#endif 
 
-			#if (UNITY_IOS || UNITY_STANDALONE_WIN)
-				return (YouMeErrorCode)youme_init (strAppKey, strAPPSecret, (int)serverRegionId, strExtServerRegionName);
-			#elif UNITY_ANDROID
-				// Android下回调的方式不一样，需要通过JNI转换对象（如string转为jsting），直接使用 C 的回调方式会导致垃圾回收时崩溃。
-				if(null == instance_youme_java)
-				{
-					return YouMeErrorCode.YOUME_ERROR_INVALID_PARAM;
-				}
-				try
-				{
-					return (YouMeErrorCode)instance_youme_java.CallStatic<int>("init",strAppKey,strAPPSecret, (int)serverRegionId, strExtServerRegionName);
-				}
-				catch
-				{
-					Debug.Log("init exception!!!");
-					return YouMeErrorCode.YOUME_ERROR_UNKNOWN;
-				}
-			#else
-				return YouMeErrorCode.YOUME_ERROR_UNKNOWN;
-			#endif
+			GameObject callbackObj = new GameObject ("youme_update_once");
+			GameObject.DontDestroyOnLoad (callbackObj);
+			callbackObj.hideFlags = HideFlags.HideInHierarchy;
+			callbackObj.AddComponent <YoumeCallbackObject>();
+
+			return (YouMeErrorCode)youme_init (strAppKey, strAPPSecret, (int)serverRegionId, strExtServerRegionName);
 		}
 
         /// <summary>
@@ -508,7 +558,7 @@ namespace YouMe{
 				youme_setSpeakerMute (bMute);
 			#endif
 		}
-
+			
         /// <summary>
         /// 获取扬声器的静音状态
         /// 这是一个同步调用接口，函数返回时表明操作已经完成
@@ -572,6 +622,25 @@ namespace YouMe{
 				return youme_getMicrophoneMute ();
 			#else
 				return false;
+			#endif
+		}
+
+		/// <summary>
+		/// 设置是否通知其他人，自己开关麦克风扬声器的状态
+		/// </summary>
+		///
+		/// <param name="bAutoSend">true通知，false不通知
+		///
+		public void SetAutoSendStatus (bool bAutoSend)
+		{
+			#if UNITY_ANDROID
+			if (!mAndroidInitOK) {
+			return;
+			}
+			#endif
+
+			#if !UNITY_EDITOR
+			youme_setAutoSendStatus (bAutoSend);
 			#endif
 		}
 
@@ -996,6 +1065,37 @@ namespace YouMe{
         }
 
         /// <summary>
+        /// 设置麦克风音量回调参数
+        /// 你可以在初始化成功后随时调用这个接口。在整个APP生命周期只需要调用一次，除非你想修改参数。
+        /// 设置成功后，当用户讲话时，你将收到回调事件 MY_MIC_LEVEL， 回调参数 iStatus 表示当前讲话的音量级别。
+        /// </summary>
+        ///
+        /// <param name="maxMicLevel">
+        /// 设为 0 表示关闭麦克风音量回调
+        /// 设为 大于0的值表示音量最大时对应的值，这个可以根据你们的UI设计来设定。
+        /// 比如你用10级的音量条来表示音量变化，则传10。这样当底层回传音量是10时，则表示当前mic音量达到最大值。
+        /// </param>
+        ///
+        /// <returns>
+        /// YouMeErrorCode.YOUME_SUCCESS 表示设置成功
+        /// 返回其他值时请看 YouMeErrorCode 的定义
+        /// </returns>
+        ///
+        public YouMeErrorCode SetMicLevelCallback(int maxMicLevel){
+			#if UNITY_EDITOR && !UNITY_EDITOR_WIN
+				return YouMeErrorCode.YOUME_SUCCESS;
+			#endif
+
+			#if UNITY_ANDROID
+				if (!mAndroidInitOK) {
+					return YouMeErrorCode.YOUME_ERROR_UNKNOWN;
+				}
+			#endif
+
+            return (YouMeErrorCode)youme_setMicLevelCallback(maxMicLevel);
+        }
+
+        /// <summary>
         /// 暂停通话，释放对麦克风等设备资源的占用。当需要用第三方模块临时录音时，可调用这个接口。
         /// 这是一个异步调用接口，函数返回YouMeErrorCode.YOUME_SUCCESS后，还需要等待如下事件回调
         /// YouMeEvent.YOUME_EVENT_PAUSED - 成功暂停语音
@@ -1109,6 +1209,66 @@ namespace YouMe{
                 return 0;
             #endif
         }
+
+		/**
+ 		 *  功能描述:Rest API , 向服务器请求额外数据
+   		 *  @param strCommand: 请求的命令字符串
+  		 *  @param strQueryBody: 请求需要的数据,json格式，内容参考restAPI
+   		 *  @param requestID: 回传id,回调的时候传回，标识消息。
+   		 *  @return YOUME_SUCCESS - 成功
+     	 *          其他 - 具体错误码
+		 */
+		public YouMeErrorCode  RequestRestApi( string command, string queryBody, ref int  requestID ){
+			#if UNITY_ANDROID
+			if (!mAndroidInitOK) {
+			return YouMeErrorCode.YOUME_ERROR_UNKNOWN;
+			}
+			#endif
+
+			#if !UNITY_EDITOR
+			return (YouMeErrorCode)youme_requestRestApi( command,  queryBody, ref requestID );
+			#else
+			return YouMeErrorCode.YOUME_ERROR_UNKNOWN;
+			#endif
+		}
+
+		/**
+   		*  功能描述:查询频道的用户列表(必须在频道中)
+   		*  @param channelID:要查询的频道ID
+    	*  @param maxCount:想要获取的最大数量，-1表示获取全部
+     	*  @param notifyMemChagne: 其他用户进出房间时，是否要收到通知
+     	*  @return 错误码，详见YouMeConstDefine.h定义
+     	*/
+		public YouMeErrorCode  GetChannelUserList( string channelID,  int maxCount, bool notifyMemChange  ){
+			#if UNITY_ANDROID
+			if (!mAndroidInitOK) {
+			return YouMeErrorCode.YOUME_ERROR_UNKNOWN;
+			}
+			#endif
+
+			#if !UNITY_EDITOR
+			return (YouMeErrorCode)youme_getChannelUserList( channelID,  maxCount, notifyMemChange);
+			#else
+			return YouMeErrorCode.YOUME_ERROR_UNKNOWN;
+			#endif
+		}
+
+		/**
+        *  功能描述:设置身份验证的token
+        *  @param strToken: 身份验证用token，设置为NULL或者空字符串，清空token值,则不验证。
+        *  @return 无
+        */
+		public void  SetToken( string strToken  ){
+			#if UNITY_ANDROID
+			if (!mAndroidInitOK) {
+			return;
+			}
+			#endif
+
+			#if !UNITY_EDITOR
+			youme_setToken();
+			#endif
+		}
 
 	} //YouMeVoiceAPI
 }

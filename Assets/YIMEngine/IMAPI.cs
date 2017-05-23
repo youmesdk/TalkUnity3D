@@ -204,6 +204,28 @@ namespace YIMEngine{
         #endif
         )] string strSavePath);
 
+		//download audio message
+		#if UNITY_IPHONE && !UNITY_EDITOR
+		[DllImport("__Internal")]
+		#else
+		[DllImport("yim")]
+		#endif
+		private static extern int IM_DownloadFileByURL(
+			[MarshalAs(
+		#if (UNITY_STANDALONE_WIN && ! UNITY_EDITOR_OSX) || UNITY_EDITOR_WIN
+			UnmanagedType.LPWStr 
+		#else
+			UnmanagedType.LPTStr
+		#endif
+		)] string strFromUrl,
+		[MarshalAs(
+		#if (UNITY_STANDALONE_WIN && ! UNITY_EDITOR_OSX) || UNITY_EDITOR_WIN
+		UnmanagedType.LPWStr 
+		#else
+			UnmanagedType.LPTStr
+		#endif
+		)] string strSavePath);
+
 
 		//join chatroom
 		#if UNITY_IPHONE && !UNITY_EDITOR
@@ -641,7 +663,66 @@ namespace YIMEngine{
         #else
             [DllImport("yim")]
         #endif
-        private static extern int IM_GetNearbyObjects(int count, DistrictLevle districtlevel);
+        private static extern int IM_GetNearbyObjects(int count, [MarshalAs(
+        #if (UNITY_STANDALONE_WIN && ! UNITY_EDITOR_OSX) || UNITY_EDITOR_WIN
+            UnmanagedType.LPWStr
+        #else
+            UnmanagedType.LPTStr
+        #endif
+        )] string serverAreaID, YIMEngine.DistrictLevel districtlevel, bool resetStartDistance);
+
+        #if UNITY_IPHONE && !UNITY_EDITOR
+		    [DllImport("__Internal")]
+        #else
+            [DllImport("yim")]
+        #endif
+        private static extern void IM_SetUpdateInterval(uint interval);
+
+        #if UNITY_IPHONE && !UNITY_EDITOR
+		    [DllImport("__Internal")]
+        #else
+            [DllImport("yim")]
+        #endif
+        private static extern void IM_SetKeepRecordModel(bool keep);
+
+        #if UNITY_IPHONE && !UNITY_EDITOR
+		    [DllImport("__Internal")]
+        #else
+            [DllImport("yim")]
+        #endif
+        private static extern int IM_SetSpeechRecognizeParam(SpeechAccent accent, SpeechRecognizeLanguage language);
+
+        #if UNITY_IPHONE && !UNITY_EDITOR
+		    [DllImport("__Internal")]
+        #else
+            [DllImport("yim")]
+        #endif
+	    private static extern int IM_Accusation([MarshalAs(
+        #if (UNITY_STANDALONE_WIN && ! UNITY_EDITOR_OSX) || UNITY_EDITOR_WIN
+            UnmanagedType.LPWStr
+        #else
+            UnmanagedType.LPTStr
+        #endif
+        )] string userID, ChatType source, int reason, [MarshalAs(
+        #if (UNITY_STANDALONE_WIN && ! UNITY_EDITOR_OSX) || UNITY_EDITOR_WIN
+            UnmanagedType.LPWStr
+        #else
+            UnmanagedType.LPTStr
+        #endif
+        )] string description, [MarshalAs(
+        #if (UNITY_STANDALONE_WIN && ! UNITY_EDITOR_OSX) || UNITY_EDITOR_WIN
+            UnmanagedType.LPWStr
+        #else
+            UnmanagedType.LPTStr
+        #endif
+        )] string extraParam);
+        
+        #if UNITY_IPHONE && !UNITY_EDITOR
+		    [DllImport("__Internal")]
+        #else
+            [DllImport("yim")]
+        #endif
+	    private static extern int IM_QueryNotice();
 
 
 		/****************************************************************************************/
@@ -653,10 +734,10 @@ namespace YIMEngine{
 		private ContactListen m_contactListen;
         private AudioPlayListen m_audioPlayListen;
         private LocationListen m_locationListen;
+        private NoticeListen m_noticeListen;
 
         //tranlate callback quen
-        private Dictionary<uint, System.Action<ErrorCode,string, LanguageCode>> tranlateCallbackQuen = new Dictionary <uint, System.Action<ErrorCode,string, LanguageCode>>();
-        private readonly object syncTranlateCallbackOp = new object();
+        private Dictionary<uint, System.Action<ErrorCode,string, LanguageCode, LanguageCode>> tranlateCallbackQuen = new Dictionary <uint, System.Action<ErrorCode,string, LanguageCode, LanguageCode>>();
 
         public static IMAPI Instance()
 		{
@@ -700,6 +781,10 @@ namespace YIMEngine{
         public void SetLocationListen(LocationListen listen)
         {
             m_locationListen = listen;
+        }
+        public void SetNoticeListen(NoticeListen listen)
+        {
+            m_noticeListen = listen;
         }
 
 		#if ((UNITY_STANDALONE_WIN && ! UNITY_EDITOR_OSX) || UNITY_EDITOR_WIN) && (UNITY_4_7 || UNITY_4_6 || UNITY_4_5 || UNITY_4_8)
@@ -914,8 +999,51 @@ namespace YIMEngine{
 					if(null != m_downloadListen)
 					{
 						string strSavePath = (string)jsonMessage["SavePath"];
-						ulong iSerial = ulong.Parse(jsonMessage["Serial"].ToString());
-						m_downloadListen.OnDownload(iSerial,errorcode,strSavePath);
+
+						MessageBodyType bodyType = (MessageBodyType)(int)jsonMessage["MessageType"];
+						if (bodyType == MessageBodyType.Voice) {
+							VoiceMessage message = new VoiceMessage ();
+							message.ChatType = (ChatType)(int)jsonMessage ["ChatType"];
+							message.RequestID = ulong.Parse (jsonMessage ["Serial"].ToString ());
+							message.MessageType = bodyType;
+							message.RecvID = (string)jsonMessage ["ReceiveID"];
+							message.SenderID = (string)jsonMessage ["SenderID"];
+							message.Text = (string)jsonMessage ["Text"];
+							message.Param = (string)jsonMessage ["Param"];
+							message.Duration = (int)jsonMessage ["Duration"];
+							message.CreateTime = (int)jsonMessage ["CreateTime"];
+							if (jsonMessage.Keys.Contains ("Distance")) {
+								message.Distance = (uint)(int)jsonMessage ["Distance"];
+							}
+							m_downloadListen.OnDownload (errorcode, message, strSavePath);
+						} else if (bodyType == MessageBodyType.File) {
+							FileMessage message = new FileMessage ();
+							message.ChatType = (ChatType)(int)jsonMessage ["ChatType"];
+							message.RequestID = ulong.Parse (jsonMessage ["Serial"].ToString ());
+							message.MessageType = bodyType;
+							message.RecvID = (string)jsonMessage ["ReceiveID"];
+							message.SenderID = (string)jsonMessage ["SenderID"];
+							message.FileName = (string)jsonMessage ["FileName"];
+							message.FileSize = (int)jsonMessage ["FileSize"];
+							message.FileType = (FileType)(int)jsonMessage ["FileType"];
+							message.FileExtension = (string)jsonMessage ["FileExtension"];
+							message.ExtParam = (string)jsonMessage ["ExtraParam"];
+							message.CreateTime = (int)jsonMessage ["CreateTime"];
+							if (jsonMessage.Keys.Contains ("Distance")) {
+								message.Distance = (uint)(int)jsonMessage ["Distance"];
+							}
+
+							m_downloadListen.OnDownload (errorcode, message, strSavePath);
+						}
+					}
+				}
+				break;
+			case Command.CMD_DOWNLOAD_URL:
+				{
+					if (null != m_downloadListen) {
+						string strFromUrl = (string)jsonMessage["FromUrl"];
+						string strSavePath = (string)jsonMessage["SavePath"];
+						m_downloadListen.OnDownloadByUrl( errorcode, strFromUrl, strSavePath );
 					}
 				}
 				break;
@@ -989,7 +1117,10 @@ namespace YIMEngine{
 							message.SenderID = (string)jsonMessage ["SenderID"];
 							message.Content = (string)jsonMessage ["Content"];
 							message.CreateTime = (int)jsonMessage ["CreateTime"];
-
+                            if (jsonMessage.Keys.Contains("Distance"))
+                            {
+                                message.Distance = (uint)(int)jsonMessage["Distance"];
+                            }
 							m_messageListen.OnRecvMessage (message);
 						} else if (bodyType == MessageBodyType.CustomMesssage) {
 							CustomMessage message = new CustomMessage ();
@@ -1001,6 +1132,10 @@ namespace YIMEngine{
 							string strBase64Content = (string)jsonMessage ["Content"];
 							message.Content = System.Convert.FromBase64String (strBase64Content);
 							message.CreateTime = (int)jsonMessage ["CreateTime"];
+                            if (jsonMessage.Keys.Contains("Distance"))
+                            {
+                                message.Distance = (uint)(int)jsonMessage["Distance"];
+                            }
 							m_messageListen.OnRecvMessage (message);
 						} else if (bodyType == MessageBodyType.Voice) {
 							VoiceMessage message = new VoiceMessage ();
@@ -1013,6 +1148,10 @@ namespace YIMEngine{
 							message.Param = (string)jsonMessage ["Param"];
 							message.Duration = (int)jsonMessage ["Duration"];
 							message.CreateTime = (int)jsonMessage ["CreateTime"];
+                            if (jsonMessage.Keys.Contains("Distance"))
+                            {
+                                message.Distance = (uint)(int)jsonMessage["Distance"];
+                            }
 							m_messageListen.OnRecvMessage (message);
 						} else if (bodyType == MessageBodyType.Gift) {
 							GiftMessage message = new GiftMessage ();
@@ -1022,6 +1161,10 @@ namespace YIMEngine{
 							message.RecvID = (string)jsonMessage ["ReceiveID"];
 							message.SenderID = (string)jsonMessage ["SenderID"];
 							message.CreateTime = (int)jsonMessage ["CreateTime"];
+                            if (jsonMessage.Keys.Contains("Distance"))
+                            {
+                                message.Distance = (uint)(int)jsonMessage["Distance"];
+                            }
 							message.ExtParam = new ExtraGifParam ().ParseFromJsonString ((string)jsonMessage ["Param"]);
 							message.GiftID = (int)jsonMessage ["GiftID"];
 							message.GiftCount = (int)jsonMessage ["GiftCount"];
@@ -1042,6 +1185,10 @@ namespace YIMEngine{
 							message.FileExtension = (string)jsonMessage ["FileExtension"];
 							message.ExtParam = (string)jsonMessage ["ExtraParam"];
 							message.CreateTime = (int)jsonMessage ["CreateTime"];
+                            if (jsonMessage.Keys.Contains("Distance"))
+                            {
+                                message.Distance = (uint)(int)jsonMessage["Distance"];
+                            }
 
 							m_messageListen.OnRecvMessage (message);
 						}
@@ -1068,6 +1215,20 @@ namespace YIMEngine{
 					}
 				}
 				break;
+            case Command.CMD_USER_ENTER_ROOM:
+                {
+                    string strChannelID = (string)jsonMessage["ChannelID"];
+                    string strUserID = (string)jsonMessage["UserID"];
+                    m_groupListen.OnUserJoinChatRoom(strChannelID, strUserID);
+                }
+                break;
+            case Command.CMD_USER_LEAVE_ROOM:
+                {
+                    string strChannelID = (string)jsonMessage["ChannelID"];
+                    string strUserID = (string)jsonMessage["UserID"];
+                    m_groupListen.OnUserLeaveChatRoom(strChannelID, strUserID);
+                }
+                break;
             case Command.CMD_QUERY_USER_STATUS:
             {
                 if (null != m_contactListen)
@@ -1098,6 +1259,8 @@ namespace YIMEngine{
                     location.City = (string)jsonMessage["City"];
                     location.DistrictCounty = (string)jsonMessage["DistrictCounty"];
                     location.Street = (string)jsonMessage["Street"];
+                    location.Longitude = (double)jsonMessage["Longitude"];
+                    location.Latitude = (double)jsonMessage["Latitude"];
 
                     m_locationListen.OnUpdateLocation(errorcode, location);
                 }
@@ -1105,6 +1268,8 @@ namespace YIMEngine{
                 break;
             case Command.CMD_GET_PEOPLE_NEARBY:
             {
+                uint startDistance = (uint)(int)jsonMessage["StartDistance"];
+                uint endDistance = (uint)(int)jsonMessage["EndDistance"];
                 JsonData neighbourListJson = jsonMessage["NeighbourList"];
                 List<YIMEngine.RelativeLocation> heighbourLists = new List<YIMEngine.RelativeLocation>();
                 for (int i = 0; i < neighbourListJson.Count; i++)
@@ -1124,9 +1289,9 @@ namespace YIMEngine{
 
                     heighbourLists.Add(relativeLocation);
                 }
-                if (null != m_messageListen)
+                if (null != m_locationListen)
                 {
-                    m_locationListen.OnGetNearbyObjects(errorcode, heighbourLists);
+                    m_locationListen.OnGetNearbyObjects(errorcode, heighbourLists, startDistance, endDistance);
                 }
             }
                 break;
@@ -1136,22 +1301,62 @@ namespace YIMEngine{
                 {
                     uint requestID = (uint)(int)jsonMessage["RequestID"];
                     string text = (string)jsonMessage["Text"];
+                    LanguageCode srcLangCode = (LanguageCode)((int)jsonMessage["SrcLangCode"]);
                     LanguageCode destLangCode = (LanguageCode)((int)jsonMessage["DestLangCode"]);
                     //m_messageListen.OnTranslateTextComplete(errorcode, requestID, text, destLangCode);
-                    lock (syncTranlateCallbackOp)
-                    {
-                                System.Action<ErrorCode, string, LanguageCode> callback = null;
-                                bool finded = tranlateCallbackQuen.TryGetValue(requestID, out callback);
-                                if (finded)
-                                {
-                                    tranlateCallbackQuen.Remove(requestID);
-                                    if(callback!=null) callback(errorcode, text, destLangCode);
-                                }
-                    }
+                    
+					System.Action<ErrorCode, string, LanguageCode, LanguageCode> callback = null;
+					bool finded = tranlateCallbackQuen.TryGetValue(requestID, out callback);
+					if (finded)
+					{
+						tranlateCallbackQuen.Remove(requestID);
+						if(callback!=null) callback(errorcode, text, srcLangCode, destLangCode);
+					}
                 }
-                
             }
                 break;
+            case Command.CMD_GET_TIPOFF_MSG:
+            {
+                if (null != m_messageListen)
+                {
+                    AccusationDealResult result = (AccusationDealResult)(int)jsonMessage["Result"];
+                    string userID = (string)jsonMessage["UserID"];
+                    uint accusationTime = (uint)jsonMessage["AccusationTime"];
+
+                    m_messageListen.OnAccusationResultNotify(result, userID, accusationTime);
+                }
+            }
+                break;
+            case Command.CMD_RECV_NOTICE:
+		    {
+                if (null != m_noticeListen)
+                {
+                    YIMEngine.Notice notice = new Notice();
+                    notice.NoticeID = (ulong)jsonMessage["NoticeID"];
+                    notice.ChannelID = (string)jsonMessage["ChannelID"];
+                    notice.NoticeType = (int)jsonMessage["NoticeType"];
+                    notice.Content = (string)jsonMessage["NoticeContent"];
+                    notice.LinkText = (string)jsonMessage["LinkText"];
+                    notice.LinkAddr = (string)jsonMessage["LinkAddress"];
+                    notice.BeginTime = (uint)jsonMessage["BeginTime"];
+                    notice.EndTime = (uint)jsonMessage["EndTime"];
+                    notice.ScrollTimes = (int)jsonMessage["ScrollTimes"];
+                    notice.Interval = (uint)jsonMessage["Interval"];
+
+                    m_noticeListen.OnRecvNotice(notice);
+                }
+		    }
+			    break;
+		    case Command.CMD_CANCEL_NOTICE:
+		    {
+                if (null != m_noticeListen)
+                {
+                    ulong noticeID = (ulong)jsonMessage["NoticeID"];
+			        string channelID = (string)jsonMessage["ChannelID"];
+                    m_noticeListen.OnCancelNotice(noticeID, channelID);
+                }
+		    }
+			    break;
 			default:
 					break;
 			}
@@ -1204,6 +1409,12 @@ namespace YIMEngine{
 		public ErrorCode DownloadAudioFile(ulong iRequestID,string strSavePath)
 		{
 			return (ErrorCode)IM_DownloadFile (iRequestID, strSavePath);
+		}
+
+		public ErrorCode DownloadFileByUrl( string strFromUrl, string strSavePath )
+		{
+			return (ErrorCode)IM_DownloadFileByURL (strFromUrl, strSavePath);
+		
 		}
 		public ErrorCode SendCustomMessage(string strRecvID,ChatType chatTpye,byte[] customMsg,ref ulong iRequestID)
 		{
@@ -1368,7 +1579,7 @@ namespace YIMEngine{
         }
 
         // 文本翻译
-        public void TranslateText( string text, LanguageCode destLangCode, LanguageCode srcLangCode,System.Action<ErrorCode,string, LanguageCode> callback)
+        public void TranslateText( string text, LanguageCode destLangCode, LanguageCode srcLangCode,System.Action<ErrorCode,string, LanguageCode, LanguageCode> callback)
 		{
             uint requestID = 0;
             var code = (ErrorCode) IM_TranslateText(ref requestID, text, destLangCode, srcLangCode);
@@ -1378,7 +1589,7 @@ namespace YIMEngine{
             }
             else
             {
-                callback(code,"", destLangCode);
+                callback(code,"", srcLangCode, destLangCode);
             }
            
 		}
@@ -1388,17 +1599,37 @@ namespace YIMEngine{
             return (ErrorCode) IM_GetCurrentLocation();
         }
 	    
-        // 获取附近的目标(人 房间) count:目标数量 一次最大20个
-        public ErrorCode GetNearbyObjects(int count = 10, DistrictLevle districtlevel = DistrictLevle.DISTRICT_UNKNOW)
+        // 获取附近的目标	count:获取数量（一次最大200） serverAreaID：区服	districtlevel：行政区划等级		resetStartDistance：是否重置查找起始距离
+        public ErrorCode GetNearbyObjects(int count, string serverAreaID, DistrictLevel districtlevel = YIMEngine.DistrictLevel.DISTRICT_UNKNOW, bool resetStartDistance = false)
         {
-            return (ErrorCode) IM_GetNearbyObjects(count, districtlevel);
+            return (ErrorCode) IM_GetNearbyObjects(count, serverAreaID, districtlevel, resetStartDistance);
         }
 
-		public static void SetMode(int iMode){
-			// #if !UNITY_EDITOR
-			IM_SetMode(iMode);
-			// #endif
-		}
+        // 设置位置更新间隔(单位：分钟)
+	    public void SetUpdateInterval(uint interval)
+        {
+            IM_SetUpdateInterval(interval);
+        }
+
+        public void SetKeepRecordModel(bool keep)
+        {
+            IM_SetKeepRecordModel(keep);
+        }
+
+        public int SetSpeechRecognizeParam(SpeechAccent accent, SpeechRecognizeLanguage language)
+        {
+           return IM_SetSpeechRecognizeParam(accent, language);
+        }
+
+	    public int Accusation(string userID, ChatType source, int reason, string description, string extraParam)
+        {
+            return IM_Accusation(userID, source, reason, description, extraParam);
+        }
+
+	    public int QueryNotice()
+        {
+            return IM_QueryNotice();
+        }
 	}
 }
 #endif

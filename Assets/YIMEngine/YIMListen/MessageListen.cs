@@ -38,6 +38,8 @@ namespace YIMEngine
         void OnRecvNewMessage(YIMEngine.ChatType chatType,string targetID);
 
         //void OnTranslateTextComplete(YIMEngine.ErrorCode errorcode, uint requestID, string text, YIMEngine.LanguageCode destLangCode);
+
+        void OnAccusationResultNotify(AccusationDealResult result, string userID, uint accusationTime);
 	}
 
 }

@@ -11,6 +11,7 @@ namespace YIMEngine
 		private ulong iRequestID;
 		private MessageBodyType messageType;
 		private int iCreateTime;
+        private uint iDistance;
 		public YIMEngine.ChatType ChatType {
 			get {
 				return chatType;
@@ -64,6 +65,15 @@ namespace YIMEngine
 				iRequestID = value;
 			}
 		}
+
+        public uint Distance {
+            get {
+                return iDistance;
+            }
+            set {
+                iDistance = value;
+            }
+        }
 	}
 
 	public class TextMessage:MessageInfoBase
@@ -258,13 +268,17 @@ namespace YIMEngine
         RoomIDTooLong = 27,			//房间名太长
         ContentInvalid = 28,			//聊天内容严重非法
         NoLocationAuthrize = 29,		//未打开定位权限
-        NoAudioDevice = 30,			//无音频设备
-        AudioDriver = 31,				//音频驱动问题
-        DeviceStatusInvalid = 32,		//设备状态错误
-        ResolveFileError = 33,			//文件解析错误
-        ReadWriteFileError = 34,		//文件读写错误
-        NoLangCode = 35,				//语言编码错误
-        TranslateUnable = 36,			//翻译接口不可用
+        UnknowLocation = 30,			//未知位置
+        Unsupport = 31,				//不支持该接口
+        NoAudioDevice = 32,			//无音频设备
+        AudioDriver = 33,				//音频驱动问题
+        DeviceStatusInvalid = 34,		//设备状态错误
+        ResolveFileError = 35,			//文件解析错误
+        ReadWriteFileError = 36,		//文件读写错误
+        NoLangCode = 37,				//语言编码错误
+        TranslateUnable = 38,			//翻译接口不可用
+        SpeechAccentInvalid = 39,		//语音识别方言无效
+        SpeechLanguageInvalid = 40,	    //语音识别语言无效
 
 		//服务器的错误码
 		ALREADYFRIENDS = 1000,
@@ -353,9 +367,11 @@ namespace YIMEngine
 		CMD_GET_ROOM_HISTORY_MSG = 16,
 		CMD_GET_USR_INFO = 17,
 		CMD_UPDATE_USER_INFO = 18,
-
+        CMD_SND_TIPOFF_MSG = 19,
+        CMD_GET_TIPOFF_MSG = 20,
         CMD_GET_DISTRICT = 21,
         CMD_GET_PEOPLE_NEARBY = 22,
+        CMD_QUERY_NOTICE = 23,
 		
 		//服务器通知
 		NOTIFY_LOGIN = 10001,
@@ -376,7 +392,13 @@ namespace YIMEngine
         CMD_QUERY_USER_STATUS,
         CMD_AUDIO_PLAY_COMPLETE,
         CMD_STOP_SEND_AUDIO,
-        CMD_TRANSLATE_COMPLETE
+        CMD_TRANSLATE_COMPLETE,
+		CMD_DOWNLOAD_URL,
+        CMD_GET_MICROPHONE_STATUS,
+        CMD_USER_ENTER_ROOM,
+        CMD_USER_LEAVE_ROOM,
+        CMD_RECV_NOTICE,
+        CMD_CANCEL_NOTICE
 	}
 
 	public enum ServerZone
@@ -522,8 +544,8 @@ namespace YIMEngine
     public enum LanguageCode
     {
         LANG_AUTO,
-        LANG_EN,			// 英语+英国                    
-        LANG_EN_US,			// 英语+美国                    
+        LANG_AF,			// 南非荷兰语
+        LANG_AM,			// 阿姆哈拉语
         LANG_AR,			// 阿拉伯语                   
         LANG_AR_AE,			// 阿拉伯语+阿拉伯联合酋长国    
         LANG_AR_BH,			// 阿拉伯语+巴林                
@@ -541,16 +563,21 @@ namespace YIMEngine
         LANG_AR_SD,			// 阿拉伯语+苏丹                
         LANG_AR_SY,			// 阿拉伯语+叙利亚              
         LANG_AR_TN,			// 阿拉伯语+突尼斯              
-        LANG_AR_YE,			// 阿拉伯语+也门                
+        LANG_AR_YE,			// 阿拉伯语+也门
+        LANG_AZ,			// 阿塞拜疆
         LANG_BE,			// 白俄罗斯语                
         LANG_BE_BY,			// 白俄罗斯语+白俄罗斯          
         LANG_BG,			// 保加利亚语                
         LANG_BG_BG,			// 保加利亚语+保加利亚          
+        LANG_BN,			// 孟加拉
+        LANG_BS,			// 波斯尼亚语
         LANG_CA,			// 加泰罗尼亚语               
         LANG_CA_ES,			// 加泰罗尼亚语+西班牙          
         LANG_CA_ES_EURO,	// 加泰罗尼亚语+西班牙,euro     
+        LANG_CO,			// 科西嘉
         LANG_CS,			// 捷克语                 
-        LANG_CS_CZ,			// 捷克语+捷克共和国            
+        LANG_CS_CZ,			// 捷克语+捷克共和国     
+        LANG_CY,			// 威尔士语
         LANG_DA,			// 丹麦语                  
         LANG_DA_DK,			// 丹麦语+丹麦                  
         LANG_DE,			// 德语                      
@@ -562,14 +589,17 @@ namespace YIMEngine
         LANG_DE_LU,			// 德语+卢森堡                  
         LANG_DE_LU_EURO,	// 德语+卢森堡,euro             
         LANG_EL,			// 希腊语                     
-        LANG_EL_GR,			// 希腊语+希腊                  
+        LANG_EL_GR,			// 希腊语+希腊  
+        LANG_EN,			// 英语
         LANG_EN_AU,			// 英语+澳大利亚                
         LANG_EN_CA,			// 英语+加拿大                  
         LANG_EN_GB,			// 英语+英国                    
         LANG_EN_IE,			// 英语+爱尔兰                  
         LANG_EN_IE_EURO,	// 英语+爱尔兰,euro             
-        LANG_EN_NZ,			// 英语+新西兰                  
-        LANG_EN_ZA,			// 英语+南非                    
+        LANG_EN_NZ,			// 英语+新西兰  
+        LANG_EN_US,			// 英语+美国
+        LANG_EN_ZA,			// 英语+南非   
+        LANG_EO,			// 世界语
         LANG_ES,			// 西班牙语                 
         LANG_ES_BO,			// 西班牙语+玻利维亚            
         LANG_ES_AR,			// 西班牙语+阿根廷              
@@ -593,6 +623,8 @@ namespace YIMEngine
         LANG_ES_UY,			// 西班牙语+乌拉圭              
         LANG_ES_VE,			// 西班牙语+委内瑞拉            
         LANG_ET_EE,			// 爱沙尼亚语+爱沙尼亚          
+        LANG_EU,			// 巴斯克 
+        LANG_FA,			// 波斯语
         LANG_FI,			// 芬兰语                  
         LANG_FI_FI,			// 芬兰语+芬兰                  
         LANG_FI_FI_EURO,	// 芬兰语+芬兰,euro             
@@ -604,11 +636,23 @@ namespace YIMEngine
         LANG_FR_FR,			// 法语+法国                    
         LANG_FR_FR_EURO,	// 法语+法国,euro               
         LANG_FR_LU,			// 法语+卢森堡                  
-        LANG_FR_LU_EURO,	// 法语+卢森堡,euro             
+        LANG_FR_LU_EURO,	// 法语+卢森堡,euro
+        LANG_FY,			// 弗里斯兰
+        LANG_GA,			// 爱尔兰语
+        LANG_GD,			// 苏格兰盖尔语
+        LANG_GL,			// 加利西亚
+        LANG_GU,			// 古吉拉特文
+        LANG_HA,			// 豪撒语
+        LANG_HAW,			// 夏威夷语
+        LANG_HI,			// 印地语
         LANG_HR,			// 克罗地亚语                  
-        LANG_HR_HR,			// 克罗地亚语+克罗地亚          
+        LANG_HR_HR,			// 克罗地亚语+克罗地亚 
+        LANG_HT,			// 海地克里奥尔
         LANG_HU,			// 匈牙利语                  
-        LANG_HU_HU,			// 匈牙利语+匈牙利              
+        LANG_HU_HU,			// 匈牙利语+匈牙利
+        LANG_HY,			// 亚美尼亚
+        LANG_ID,			// 印度尼西亚
+        LANG_IG,			// 伊博
         LANG_IS,			// 冰岛语                     
         LANG_IS_IS,			// 冰岛语+冰岛                  
         LANG_IT,			// 意大利语                   
@@ -618,25 +662,47 @@ namespace YIMEngine
         LANG_IW,			// 希伯来语                    
         LANG_IW_IL,			// 希伯来语+以色列              
         LANG_JA,			// 日语                     
-        LANG_JA_JP,			// 日语+日本                    
+        LANG_JA_JP,			// 日语+日本    
+        LANG_JW,			// 爪哇
+        LANG_KA,			// 格鲁吉亚语
+        LANG_KK,			// 哈萨克语
+        LANG_KN,			// 卡纳达
+        LANG_KM,			// 高棉语
         LANG_KO,			// 朝鲜语                      
         LANG_KO_KR,			// 朝鲜语+南朝鲜                
+        LANG_KU,			// 库尔德
+        LANG_KY,			// 吉尔吉斯斯坦
+        LANG_LA,			// 拉丁语
+        LANG_LB,			// 卢森堡语
+        LANG_LO,			// 老挝
         LANG_LT,			// 立陶宛语
         LANG_LT_LT,			// 立陶宛语+立陶宛              
         LANG_LV,			// 拉托维亚语+列托              
-        LANG_LV_LV,			// 拉托维亚语+列托              
+        LANG_LV_LV,			// 拉托维亚语+列托     
+        LANG_MG,			// 马尔加什
+        LANG_MI,			// 毛利
         LANG_MK,			// 马其顿语
-        LANG_MK_MK,			// 马其顿语+马其顿王国          
+        LANG_MK_MK,			// 马其顿语+马其顿王国    
+        LANG_ML,			// 马拉雅拉姆
+        LANG_MA,			// 旁遮普语
+        LANG_MN,			// 蒙古
+        LANG_MR,			// 马拉地语
+        LANG_MS,			// 马来语
+        LANG_MT,			// 马耳他
+        LANG_MY,			// 缅甸
         LANG_NL,			// 荷兰语
         LANG_NL_BE,			// 荷兰语+比利时                
         LANG_NL_BE_EURO,	// 荷兰语+比利时,euro           
         LANG_NL_NL,			// 荷兰语+荷兰                  
-        LANG_NL_NL_EURO,	// 荷兰语+荷兰,euro             
+        LANG_NL_NL_EURO,	// 荷兰语+荷兰,euro   
+        LANG_NE,			// 尼泊尔
         LANG_NO,			// 挪威语
         LANG_NO_NO,			// 挪威语+挪威                  
         LANG_NO_NO_NY,		// 挪威语+挪威,nynorsk          
+        LANG_NY,			// 齐切瓦语
         LANG_PL,			// 波兰语
-        LANG_PL_PL,			// 波兰语+波兰                  
+        LANG_PL_PL,			// 波兰语+波兰      
+        LANG_PS,			// 普什图语
         LANG_PT,			// 葡萄牙语
         LANG_PT_BR,			// 葡萄牙语+巴西                
         LANG_PT_PT,			// 葡萄牙语+葡萄牙              
@@ -644,29 +710,48 @@ namespace YIMEngine
         LANG_RO,			// 罗马尼亚语
         LANG_RO_RO,			// 罗马尼亚语+罗马尼亚          
         LANG_RU,			// 俄语
-        LANG_RU_RU,			// 俄语+俄罗斯                  
+        LANG_RU_RU,			// 俄语+俄罗斯       
+        LANG_SD,			// 信德
         LANG_SH,			// 塞波尼斯_克罗地亚语
         LANG_SH_YU,			// 塞波尼斯_克罗地亚语+南斯拉夫 
+        LANG_SI,			// 僧伽罗语
         LANG_SK,			// 斯洛伐克语
         LANG_SK_SK,			// 斯洛伐克语+斯洛伐克          
         LANG_SL,			// 斯洛语尼亚语
-        LANG_SL_SI,			// 斯洛语尼亚语+斯洛文尼亚      
+        LANG_SL_SI,			// 斯洛语尼亚语+斯洛文尼亚     
+        LANG_SM,			// 萨摩亚
+        LANG_SN,			// 修纳
+        LANG_SO,			// 索马里
         LANG_SQ,			// 阿尔巴尼亚语
         LANG_SQ_AL,			// 阿尔巴尼亚语+阿尔巴尼亚      
         LANG_SR,			// 塞尔维亚语
-        LANG_SR_YU,			// 塞尔维亚语+南斯拉夫          
+        LANG_SR_YU,			// 塞尔维亚语+南斯拉夫       
+        LANG_ST,			// 塞索托语
+        LANG_SU,			// 巽他语
         LANG_SV,			// 瑞典语
-        LANG_SV_SE,			// 瑞典语+瑞典                  
+        LANG_SV_SE,			// 瑞典语+瑞典       
+        LANG_SW,			// 斯瓦希里语
+        LANG_TA,			// 泰米尔
+        LANG_TE,			// 泰卢固语
+        LANG_TG,			// 塔吉克斯坦
         LANG_TH,			// 泰语
         LANG_TH_TH,			// 泰语+泰国                    
+        LANG_TL,			// 菲律宾
         LANG_TR,			// 土耳其语
         LANG_TR_TR,			// 土耳其语+土耳其              
         LANG_UK,			// 乌克兰语
-        LANG_UK_UA,			// 乌克兰语+乌克兰              
+        LANG_UK_UA,			// 乌克兰语+乌克兰    
+        LANG_UR,			// 乌尔都语
+        LANG_UZ,			// 乌兹别克斯坦
+        LANG_VI,			// 越南
+        LANG_XH,			// 科萨
+        LANG_YID,			// 意第绪语
+        LANG_YO,			// 约鲁巴语
         LANG_ZH,			// 汉语
         LANG_ZH_CN,			// 汉语+中国                    
         LANG_ZH_HK,			// 汉语+香港                    
-        LANG_ZH_TW			// 汉语+台湾                    
+        LANG_ZH_TW,			// 汉语+台湾     
+        LANG_ZU				// 祖鲁语
     };
 
     public class GeographyLocation
@@ -677,6 +762,8 @@ namespace YIMEngine
         string strCity;
         string strDistrictCounty;
         string strStreet;
+        double fLongitude;
+        double fLatitude;
 
         public uint DistrictCode {
             get {
@@ -729,6 +816,25 @@ namespace YIMEngine
             }
             set {
                 strStreet = value;
+            }
+        }
+
+        public double Longitude
+        {
+            get {
+                return fLongitude;
+            }
+            set {
+                fLongitude = value;
+            }
+        }
+        public double Latitude
+        {
+            get {
+                return fLatitude;
+            }
+            set {
+                fLatitude = value;
             }
         }
     };
@@ -826,7 +932,7 @@ namespace YIMEngine
         }
     }
 
-    public enum DistrictLevle
+    public enum DistrictLevel
     {
         DISTRICT_UNKNOW,
         DISTRICT_COUNTRY,	// 国家
@@ -835,4 +941,151 @@ namespace YIMEngine
         DISTRICT_COUNTY,	// 区县
         DISTRICT_STREET		// 街道
     };
+
+    // 举报处理结果
+    public enum AccusationDealResult
+    {
+        ACCUSATIONRESULT_IGNORE,			// 忽略
+        ACCUSATIONRESULT_WARNING,			// 警告
+        ACCUSATIONRESULT_FROBIDDEN_SPEAK	// 禁言
+    };
+
+    public enum SpeechAccent
+    {
+        ACCENT_MANDARIN,	// 普通话
+        ACCENT_EN_US,		// 英语
+        ACCENT_YUEYU,		// 粤语
+        ACCENT_SICHUAN,		// 四川话
+        ACCENT_HENAN		// 河南话
+    };
+
+    public enum SpeechRecognizeLanguage
+    {
+        RECOGNIZELANG_ZH_CH,	// 简体中文
+        RECOGNIZELANG_ZH_TW,	// 繁体中文
+        RECOGNIZELANG_EN_US		// 英文
+    };
+
+    public enum AudioDeviceStatus
+    {
+        STATUS_AVAILABLE,		// 可用
+        STATUS_NO_AUTHORITY,	// 无权限
+        STATUS_MUTE,			// 静音
+        STATUS_UNAVAILABLE		// 不可用
+    };
+
+    public class Notice
+    {
+        ulong uNoticeID;
+	    int iNoticeType;
+	    string strChannelID;
+	    string strContent;
+	    string strLinkeText;
+	    string strLinkAddr;
+	    uint iBeginTime;
+	    uint iEndTime;
+	    int iScrollTimes;
+	    uint iInterval;
+
+        public ulong NoticeID
+        {
+            get{
+                return uNoticeID;
+            }
+            set{
+                uNoticeID = value;
+            }
+        }
+        
+        public int NoticeType
+        {
+            get{
+                return iNoticeType;
+            }
+            set{
+                iNoticeType = value;
+            }
+        }
+
+        public string ChannelID
+        {
+            get{
+                return strChannelID;
+            }
+            set{
+                strChannelID = value;
+            }
+        }
+
+        public string Content
+        {
+            get{
+                return strContent;
+            }
+            set{
+                strContent = value;
+            }
+        }
+
+        public string LinkText
+        {
+            get{
+                return strLinkeText;
+            }
+            set{
+                strLinkeText = value;
+            }
+        }
+
+        public string LinkAddr
+        {
+            get{
+                return strLinkAddr;
+            }
+            set{
+                strLinkAddr = value;
+            }
+        }
+
+        public uint BeginTime
+        {
+            get{
+                return iBeginTime;
+            }
+            set{
+                iBeginTime = value;
+            }
+        }
+
+        public uint EndTime
+        {
+            get{
+                return iEndTime;
+            }
+            set{
+                iEndTime = value;
+            }
+        }
+
+        public int ScrollTimes
+        {
+            get{
+                return iScrollTimes;
+            }
+            set{
+                iScrollTimes = value;
+            }
+        }
+
+        public uint Interval
+        {
+            get{
+                return iInterval;
+            }
+            set{
+                iInterval = value;
+            }
+        }
+
+    }
 }

@@ -289,6 +289,12 @@ public class IMInternalManager :
 
     }
 
+    //举报结果通知
+    public void OnAccusationResultNotify(AccusationDealResult result, string userID, uint accusationTime)
+    {
+
+    }
+
     #endregion
 
     #region OnJoinGroupRequest implementation
@@ -309,14 +315,23 @@ public class IMInternalManager :
             IMClient.Instance.ChannelEventListener(new ChannelEvent(Conv.ErrorCodeConvert(errorcode), et, iChatRoomID));
         }
     }
+    //其他成员进出频道的通知，需要联系游密开启通知功能
+    public void OnUserJoinChatRoom(string strRoomID, string strUserID)
+    {
+
+    }
+    public void OnUserLeaveChatRoom(string strRoomID, string strUserID)
+    {
+
+    }
     #endregion
 
     #region DownloadListen implementation
-    public void OnDownload(ulong iRequestID, YIMEngine.ErrorCode errorcode, string strSavePath)
+    public void OnDownload(YIMEngine.ErrorCode errorcode, YIMEngine.MessageInfoBase message, string strSavePath)
     {
 
         Action<YouMe.StatusCode, string> callbackObj = null;
-        bool finded = downloadCallbackQueue.TryGetValue(iRequestID, out callbackObj);
+        bool finded = downloadCallbackQueue.TryGetValue(message.RequestID, out callbackObj);
         if (finded)
         {
             if (callbackObj != null)
@@ -330,9 +345,15 @@ public class IMInternalManager :
                     Log.e("OnDownload error:" + e.ToString());
                 }
             }
-            downloadCallbackQueue.Remove(iRequestID);
+            downloadCallbackQueue.Remove(message.RequestID);
         }
     }
+
+    public void OnDownloadByUrl(YIMEngine.ErrorCode errorcode, string strFromUrl, string strSavePath)
+    {
+
+    }
+
     #endregion
 
     #region ContactListen implementation
@@ -357,7 +378,7 @@ public class IMInternalManager :
 
     }
 
-    public void OnGetNearbyObjects(YIMEngine.ErrorCode errorcode, List<YIMEngine.RelativeLocation> neighbourList)
+    public void OnGetNearbyObjects(YIMEngine.ErrorCode errorcode, List<YIMEngine.RelativeLocation> neighbourList, uint startDistance, uint endDistance)
     {
 
     }

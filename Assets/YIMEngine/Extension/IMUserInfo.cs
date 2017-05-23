@@ -12,9 +12,25 @@ namespace YIMEngine
         /// </summary>
         public string ServerArea { get; set; }
         /// <summary>
+        /// 游戏服id
+        /// </summary>
+        public string ServerAreaID { get; set; }
+        /// <summary>
         /// 大区
         /// </summary>
         public string Location { get; set; }
+        /// <summary>
+        /// 大区id
+        /// </summary>
+        public string LocationID { get; set; }
+        /// <summary>
+        /// 平台名称，比如：应用宝
+        /// </summary>
+        public string Platform { get; set; }
+        /// <summary>
+        /// 平台id
+        /// </summary>
+        public string PlatformID { get; set; }
         /// <summary>
         /// 角色等级
         /// </summary>
@@ -41,6 +57,10 @@ namespace YIMEngine
             jsonObj.location = this.Location;
             jsonObj.nickname = this.NickName;
             jsonObj.server_area = this.ServerArea;
+            jsonObj.server_area_id = this.ServerAreaID;
+            jsonObj.location_id = this.LocationID;
+            jsonObj.platform = this.Platform;
+            jsonObj.platform_id = this.PlatformID;
             return JsonMapper.ToJson(jsonObj);
         }
 
@@ -52,6 +72,10 @@ namespace YIMEngine
             this.Location = jsonObj.location;
             this.NickName = jsonObj.nickname;
             this.ServerArea = jsonObj.server_area;
+            this.LocationID = jsonObj.location_id;
+            this.PlatformID = jsonObj.platform_id;
+            this.ServerAreaID = jsonObj.server_area_id;
+            this.Platform = jsonObj.platform;
             return this;
         } 
     }
@@ -62,8 +86,13 @@ namespace YIMEngine
         public string nickname { get; set; }
        
         public string server_area { get; set; }
+        public string server_area_id { get; set; }
        
         public string location { get; set; }
+        public string location_id { get; set; }
+
+        public string platform { get; set; }
+        public string platform_id { get; set; }
         
         public string level { get; set; }
         

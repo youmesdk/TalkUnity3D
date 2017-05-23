@@ -49,7 +49,8 @@ namespace YouMe
 		YOUME_EVENT_OTHERS_SPEAKER_ON    = 18, ///< 其他用户扬声器打开
 		YOUME_EVENT_OTHERS_SPEAKER_OFF   = 19, ///< 其他用户扬声器关闭
 		YOUME_EVENT_OTHERS_VOICE_ON      = 20, ///< 其他用户进入讲话状态
-		YOUME_EVENT_OTHERS_VOICE_OFF     = 21  ///< 其他用户进入静默状态
+		YOUME_EVENT_OTHERS_VOICE_OFF     = 21, ///< 其他用户进入静默状态
+	    YOUME_EVENT_MY_MIC_LEVEL         = 22, ///< 麦克风的语音级别
     }
 
     public enum YouMeErrorCode
@@ -76,6 +77,7 @@ namespace YouMe
         YOUME_ERROR_SERVER_INVALID               = -104, ///< 语音服务不可用
         YOUME_ERROR_NETWORK_ERROR                = -105, ///< 网络错误
         YOUME_ERROR_SERVER_INTER_ERROR           = -106, ///< 服务器内部错误
+		YOUME_ERROR_QUERY_RESTAPI_FAIL			 = -107, ///< 请求RestApi信息失败了	
 
         // 麦克风错误
         YOUME_ERROR_REC_INIT_FAILED              = -201, ///< 录音模块初始化失败

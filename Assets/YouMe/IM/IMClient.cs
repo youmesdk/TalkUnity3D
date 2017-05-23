@@ -173,15 +173,15 @@ namespace YouMe
             throw new NotImplementedException();
         }
 
-        public IMClient SetDebug(bool isDebug)
-        {
-            if(isDebug){
-                IMAPI.SetMode(0);
-            }else{
-                IMAPI.SetMode(2);
-            }
-            return this;
-        }
+        // public IMClient SetDebug(bool isDebug)
+        // {
+        //     if(isDebug){
+        //         IMAPI.SetMode(0);
+        //     }else{
+        //         IMAPI.SetMode(2);
+        //     }
+        //     return this;
+        // }
 
         public IMClient SetLogLevel(LogLevel logLevel)
         {

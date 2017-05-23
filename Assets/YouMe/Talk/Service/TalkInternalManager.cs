@@ -10,6 +10,7 @@ public class TalkInternalManager : MonoBehaviour
     public Dictionary<string, Action<ChannelEvent>> joinChannelCallbacks = new Dictionary<string, Action<ChannelEvent>>();
     public Dictionary<string, Action<ChannelEvent>> leaveChannelCallbacks = new Dictionary<string, Action<ChannelEvent>>();
     public Action<ChannelEvent> leaveAllChannelCallback = null;
+    public Action<SpeakToChannelEvent> speakToChannelCallback = null;
 
     private static TalkInternalManager _instance;
     public static TalkInternalManager Instance
@@ -64,7 +65,6 @@ public class TalkInternalManager : MonoBehaviour
                     initCallBack(new InitEvent(errorCode));
                 }
                 break;
-
             case YouMe.YouMeEvent.YOUME_EVENT_JOIN_OK:
                 // if (string.Equals (channelID, ARoomID)) 
                 CallJoinChannelCallback(channelID,new ChannelEvent( Conv.ErrorCodeConvert(errorCode),ChannelEventType.JOIN_SUCCESS,channelID ));
@@ -85,13 +85,11 @@ public class TalkInternalManager : MonoBehaviour
                 break;
 
             case YouMe.YouMeEvent.YOUME_EVENT_SPEAK_SUCCESS:
-
-                // if (string.Equals (channelID, ARoomID)) {
-                // tipsText.text = "可以对A房间说话";
-                break;
             case YouMe.YouMeEvent.YOUME_EVENT_SPEAK_FAILED:
-                // if (string.Equals (channelID, ARoomID)) {
-                // 	tipsText.text = "对A房间说话的操作失败";
+                // tipsText.text = "可以对"+channelID+"房间说话";
+                if(speakToChannelCallback != null){
+                    speakToChannelCallback(new SpeakToChannelEvent(errorCode,channelID));
+                }
                 break;
             case YouMe.YouMeEvent.YOUME_EVENT_OTHERS_VOICE_ON:
                 Debug.LogError("YOUME_EVENT_OTHERS_VOICE_ON:" + param);
